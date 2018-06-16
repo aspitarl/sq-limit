@@ -36,11 +36,11 @@ d_sun = 1.50e11
 
 
 
-def gen_emissivity(e_low,e_high,E_cutoff,E_bb):
-    emissivity = np.copy(E_bb)
+def gen_emissivity(e_low,e_high,E_cutoff,E_ph):
+    emissivity = np.copy(E_ph)
     
     i=0
-    for E in E_bb:
+    for E in E_ph:
         if (E<E_cutoff):
             emissivity[i] = e_low
         else: 
@@ -49,11 +49,11 @@ def gen_emissivity(e_low,e_high,E_cutoff,E_bb):
     
     return emissivity
 
-def lor_emissivity(e_bg,e_high,E_cutoff,w,E_bb):
-    emissivity = np.copy(E_bb)
+def lor_emissivity(e_bg,e_high,E_cutoff,w,E_ph):
+    emissivity = np.copy(E_ph)
     
     i=0
-    for E in E_bb:
+    for E in E_ph:
         emissivity[i] = e_bg + (e_high-e_bg)/(1 + ((E-E_cutoff)**2/(w**2))  )
         i=i+1   
     return emissivity
@@ -67,9 +67,9 @@ def stephan(T):
 def solid_angle_sun (r_e, d_sun):
     return 4*(pi)*((pi*r_e**2)/(4*pi*d_sun**2))
 
-def spect_rad(T,E_bb, emissivity, powfactor = 1):
-    a = (2*(E_bb**3))/(h**3*c**2)
-    b = 1/( np.exp((E_bb)/(k*T)) -1 )
+def spect_rad(E_ph,T, emissivity, powfactor = 1):
+    a = (2*(E_ph**3))/(h**3*c**2)
+    b = 1/( np.exp((E_ph)/(k*T)) -1 )
     intensity = a*b*powfactor
     # units (eV/s)/m^2*eV*sr
     
@@ -77,7 +77,7 @@ def spect_rad(T,E_bb, emissivity, powfactor = 1):
      # units W/m^2*eV*sr
      
     intensity = intensity*emissivity
-    spectra = np.transpose(np.stack((E_bb,intensity)))
+    spectra = np.transpose(np.stack((E_ph,intensity)))
     return spectra
 
 def rad_to_rad(spectrum, solidangle ,emitterarea, absorberarea):
@@ -92,10 +92,10 @@ def rad_to_rad(spectrum, solidangle ,emitterarea, absorberarea):
     
     return spectrum
 
-def solar(T,E_bb,emissivity, powfactor = 1):
-    BB = spect_rad(T,E_bb,emissivity, powfactor)
-    BB = rad_to_rad(BB, solid_angle_sun(r_earth,d_sun), 4*pi*r_sun**2, (pi*r_earth**2))
-    # units W/eV
+
+def gen_spectrum(E_ph,constants):
+    BB = spect_rad(E_ph,constants['Temp'],constants['emissivity'], constants['powfactor'])
+    BB = rad_to_rad(BB,constants['solidangle'] ,constants['emitterarea'], constants['absorberarea'])
     return BB
 
 ####Analysis
@@ -189,7 +189,7 @@ def max_eff(egap, spectrum):
     irradiance =  np.trapz(spectrum[::-1, 1] * e * spectrum[::-1, 0], spectrum[::-1, 0])
     return max_power(egap, spectrum) / irradiance
 
-def max_eff_temp(E_bb,emissivity, Tmin,Tmax,dT,sourcetype = 0):
+def max_eff_temp(E_ph,Tmin,Tmax,dT,constants):
     # sourcetype 1 for sun and 0 for full angle
     Temps = pd.Series(np.arange(Tmin,Tmax,dT))
     spectra_ph_all = pd.Series(index = Temps,dtype=object)
@@ -200,13 +200,9 @@ def max_eff_temp(E_bb,emissivity, Tmin,Tmax,dT,sourcetype = 0):
 
     i=0
     for temp in Temps:
-        if sourcetype:
-            spectra = solar(temp,E_bb,emissivity)
-        else:
-            spectra = spect_rad(temp,E_bb,emissivity)
-            spectra = rad_to_rad(spectra, solidangle = 4*pi, emitterarea = 1, absorberarea = 1)
+        constants['Temp'] = temp
+        spectra = gen_spectrum(E_ph,constants)
         spectra_ph = power_to_photons(spectra)
-
         spectra_ph_all[temp] = spectra_ph
         max_eff_all_Si[temp] = max_eff(Egap, spectra_ph)*100
         max_eff_all_GaSb[temp] = max_eff(0.7, spectra_ph)*100
@@ -218,7 +214,7 @@ def max_eff_temp(E_bb,emissivity, Tmin,Tmax,dT,sourcetype = 0):
     return max_eff_all_Si, max_eff_all_GaSb, max_pow_all_Si,max_pow_all_GaSb
 
 
-def max_eff_power(E_bb,emissivity):
+def max_eff_power(E_ph,constants):
     
     powers = pd.Series(np.arange(10, 1000,10))
     spectra_ph_all = pd.Series(index = powers,dtype=object)
@@ -229,8 +225,8 @@ def max_eff_power(E_bb,emissivity):
 
     i=0
     for power in powers:
-        spectra = spect_rad(5500,E_bb,emissivity, powfactor = power )
-        spectra = rad_to_rad(spectra, solidangle = 4*pi, emitterarea = 1, absorberarea = 1)
+        constants['powfactor'] = power
+        spectra = gen_spectrum(E_ph,constants)
         spectra_ph = power_to_photons(spectra)
         
         spectra_ph_all[power] = spectra_ph
