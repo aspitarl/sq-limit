@@ -34,13 +34,7 @@ r_earth = 6e6
 r_sun = 6.95e8
 d_sun = 1.50e11
 
-def stephan(T):
-    result = (5.670367e-8)*(T**4)
-    #units W/m^2
-    return result
 
-def solid_angle (r_e, d_sun):
-    return 4*(pi)*((pi*r_e**2)/(4*pi*d_sun**2))
 
 def gen_emissivity(e_low,e_high,E_cutoff,E_bb):
     emissivity = np.copy(E_bb)
@@ -64,6 +58,15 @@ def lor_emissivity(e_bg,e_high,E_cutoff,w,E_bb):
         i=i+1   
     return emissivity
 
+
+def stephan(T):
+    result = (5.670367e-8)*(T**4)
+    #units W/m^2
+    return result
+
+def solid_angle_sun (r_e, d_sun):
+    return 4*(pi)*((pi*r_e**2)/(4*pi*d_sun**2))
+
 def spect_rad(T,E_bb, emissivity, powfactor = 1):
     a = (2*(E_bb**3))/(h**3*c**2)
     b = 1/( np.exp((E_bb)/(k*T)) -1 )
@@ -77,23 +80,27 @@ def spect_rad(T,E_bb, emissivity, powfactor = 1):
     spectra = np.transpose(np.stack((E_bb,intensity)))
     return spectra
 
+def rad_to_rad(spectrum, solidangle ,emitterarea, absorberarea):
+    spectra =  spectrum[:,1]
+    spectra = spectra*emitterarea   
+    # units W/eV*sr
+    spectra = spectra*solidangle/4   ### fudge factor of 4 for now. see above.
+    # units W/eV
+    spectra = spectra/absorberarea  
+    # units W/m^2*eV
+    spectrum[:,1] = spectra
+    
+    return spectrum
 
-def solar(T,E_bb,emissivity):
-    BB = spect_rad(T,E_bb,emissivity)
-    BB = rad_to_power(BB)
-    BB[:,1] = BB[:,1]/(pi*r_earth**2)
+def solar(T,E_bb,emissivity, powfactor = 1):
+    BB = spect_rad(T,E_bb,emissivity, powfactor)
+    BB = rad_to_rad(BB, solid_angle_sun(r_earth,d_sun), 4*pi*r_sun**2, (pi*r_earth**2))
     # units W/eV
     return BB
 
 ####Analysis
 
-def rad_to_power(spectrum, solidangle = solid_angle(r_earth,d_sun),emitterarea = 4*pi*r_sun**2):
-    spectra =  spectrum[:,1]
-    spectra = spectra*solidangle/4   ### fudge factor of 4 for now. see above.
-    spectra = spectra*emitterarea   
-    spectrum[:,1] = spectra
-    # units W/eV
-    return spectrum
+
     
 # convert to photons from energy
 def power_to_photons(spectrum):
@@ -197,7 +204,7 @@ def max_eff_temp(E_bb,emissivity, Tmin,Tmax,dT,sourcetype = 0):
             spectra = solar(temp,E_bb,emissivity)
         else:
             spectra = spect_rad(temp,E_bb,emissivity)
-            spectra = rad_to_power(spectra, solidangle = 4*pi, emitterarea = 1)
+            spectra = rad_to_rad(spectra, solidangle = 4*pi, emitterarea = 1, absorberarea = 1)
         spectra_ph = power_to_photons(spectra)
 
         spectra_ph_all[temp] = spectra_ph
@@ -223,7 +230,7 @@ def max_eff_power(E_bb,emissivity):
     i=0
     for power in powers:
         spectra = spect_rad(5500,E_bb,emissivity, powfactor = power )
-        spectra = rad_to_power(spectra, solidangle = 4*pi, emitterarea = 1)
+        spectra = rad_to_rad(spectra, solidangle = 4*pi, emitterarea = 1, absorberarea = 1)
         spectra_ph = power_to_photons(spectra)
         
         spectra_ph_all[power] = spectra_ph
