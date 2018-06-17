@@ -199,52 +199,22 @@ def max_eff(egap, spectrum):
     irradiance =  np.trapz(spectrum[::-1, 1] * e * spectrum[::-1, 0], spectrum[::-1, 0])
     return max_power(egap, spectrum) / irradiance
 
-def max_eff_temp(E_ph,Tmin,Tmax,dT,constants):
-    # sourcetype 1 for sun and 0 for full angle
-    Temps = pd.Series(np.arange(Tmin,Tmax,dT))
-    spectra_ph_all = pd.Series(index = Temps,dtype=object)
-    max_eff_all_Si = pd.Series(index = Temps)
-    max_eff_all_GaSb = pd.Series(index = Temps)
-    max_pow_all_Si = pd.Series(index = Temps)
-    max_pow_all_GaSb = pd.Series(index = Temps)
+def max_eff_array(spectra_ph_all,index):
+    
+    max_eff_all_Si = pd.Series(index = index)
+    max_eff_all_GaSb = pd.Series(index = index)
+    max_pow_all_Si = pd.Series(index = index)
+    max_pow_all_GaSb = pd.Series(index = index)
 
     i=0
-    for temp in Temps:
-        constants['Temp'] = temp
-        spectra = gen_spectrum(E_ph,constants)
-        spectra_ph = power_to_photons(spectra)
-        spectra_ph_all[temp] = spectra_ph
-        max_eff_all_Si[temp] = max_eff(Egap, spectra_ph)*100
-        max_eff_all_GaSb[temp] = max_eff(0.7, spectra_ph)*100
+    for idx in index:
+        spectra_ph = spectra_ph_all[idx]
 
-        max_pow_all_Si[temp] = max_power(Egap, spectra_ph)
-        max_pow_all_GaSb[temp] = max_power(0.7, spectra_ph)
-        i=i+1
-    
-    return max_eff_all_Si, max_eff_all_GaSb, max_pow_all_Si,max_pow_all_GaSb
-
-
-def max_eff_power(E_ph,constants):
-    
-    powers = pd.Series(np.arange(10, 1000,10))
-    spectra_ph_all = pd.Series(index = powers,dtype=object)
-    max_eff_all_Si = pd.Series(index = powers)
-    max_eff_all_GaSb = pd.Series(index = powers)
-    max_pow_all_Si = pd.Series(index = powers)
-    max_pow_all_GaSb = pd.Series(index = powers)
-
-    i=0
-    for power in powers:
-        constants['powfactor'] = power
-        spectra = gen_spectrum(E_ph,constants)
-        spectra_ph = power_to_photons(spectra)
+        max_eff_all_Si[idx] = max_eff(Egap, spectra_ph)*100
+        max_eff_all_GaSb[idx] = max_eff(0.7, spectra_ph)*100
         
-        spectra_ph_all[power] = spectra_ph
-        max_eff_all_Si[power] = max_eff(Egap, spectra_ph)*100
-        max_eff_all_GaSb[power] = max_eff(0.7, spectra_ph)*100
-        
-        max_pow_all_Si[power] = max_power(Egap, spectra_ph)
-        max_pow_all_GaSb[power] = max_power(0.7, spectra_ph)
+        max_pow_all_Si[idx] = max_power(Egap, spectra_ph)
+        max_pow_all_GaSb[idx] = max_power(0.7, spectra_ph)
         i=i+1
     
     return max_eff_all_Si, max_eff_all_GaSb, max_pow_all_Si,max_pow_all_GaSb
