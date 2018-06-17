@@ -70,7 +70,7 @@ def solid_angle_sun (r_e, d_sun):
 def spect_rad(E_ph,T, emissivity, powfactor = 1):
     a = (2*(E_ph**3))/(h**3*c**2)
     b = 1/( np.exp((E_ph)/(k*T)) -1 )
-    intensity = a*b*powfactor
+    intensity = a*b
     # units (eV/s)/m^2*eV*sr
     
     intensity = intensity*e 
@@ -94,9 +94,19 @@ def rad_to_rad(spectrum, solidangle ,emitterarea, absorberarea):
 
 
 def gen_spectrum(E_ph,constants):
-    BB = spect_rad(E_ph,constants['Temp'],constants['emissivity'], constants['powfactor'])
+    BB = spect_rad(E_ph,constants['Temp'],constants['emissivity'])
     BB = rad_to_rad(BB,constants['solidangle'] ,constants['emitterarea'], constants['absorberarea'])
     return BB
+
+def gen_spectrum_lor(E_ph,I_bg,I_high,E_cutoff,w):
+    intensity = np.copy(E_ph)  
+    i=0
+    for E in E_ph:
+        intensity[i] = I_bg + (I_high-I_bg)/(1 + ((E-E_cutoff)**2/(w**2))  )
+        i=i+1  
+    
+    spectra = np.transpose(np.stack((E_ph,intensity)))
+    return spectra
 
 ####Analysis
 
