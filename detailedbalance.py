@@ -167,7 +167,8 @@ def recomb_rate_v(egap, spectrum, voltage):
     return e * rr_v(egap, spectrum, voltage)
 
 def current_density(egap, spectrum, voltage):
-    return e * (photons_above_bandgap(egap, spectrum) - rr0(egap, spectrum) * (np.exp(voltage / (k * Tcell))) -1 )
+    PAG = photons_above_bandgap(egap, spectrum) 
+    return e * (PAG- rr0(egap, spectrum) * (np.exp(voltage / (k * Tcell)) - 1) )
 #    j = np.copy(voltage)
 #    for i in range(len(voltage)):
 #        j[i] = e * (photons_above_bandgap(egap, spectrum) - rr_v(egap, spectrum,voltage[i]))
@@ -178,7 +179,7 @@ def jsc(egap, spectrum):
     return current_density(egap, spectrum, 0)
 
 def voc(egap, spectrum):
-    return (k * Tcell) * np.log(photons_above_bandgap(egap, spectrum) / rr0(egap, spectrum))
+    return (k * Tcell) * np.log((photons_above_bandgap(egap, spectrum) / rr0(egap, spectrum)) +1)
 
 
 def v_at_mpp(egap, spectrum):
