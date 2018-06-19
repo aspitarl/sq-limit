@@ -196,8 +196,7 @@ def int_irr(egap, spectrum):
     return irradiance
 
 def max_eff(egap, spectrum):
-    irradiance =  np.trapz(spectrum[::-1, 1] * e * spectrum[::-1, 0], spectrum[::-1, 0])
-    return max_power(egap, spectrum) / irradiance
+    return max_power(egap, spectrum) / int_irr(egap, spectrum)
 
 def max_eff_array(spectra_ph_all,index):
     
