@@ -167,13 +167,19 @@ def recomb_rate_v(egap, spectrum, voltage):
     return e * rr_v(egap, spectrum, voltage)
 
 def current_density(egap, spectrum, voltage):
-    return e * (photons_above_bandgap(egap, spectrum) - rr0(egap, spectrum) * (np.exp(voltage / (k * Tcell))) - 1)
-    #return e * (photons_above_bandgap(egap, spectrum) - rr_v(egap, spectrum,voltage))
+    return e * (photons_above_bandgap(egap, spectrum) - rr0(egap, spectrum) * (np.exp(voltage / (k * Tcell))) -1 )
+#    j = np.copy(voltage)
+#    for i in range(len(voltage)):
+#        j[i] = e * (photons_above_bandgap(egap, spectrum) - rr_v(egap, spectrum,voltage[i]))
+#    return j
+    
+    
 def jsc(egap, spectrum):
     return current_density(egap, spectrum, 0)
 
 def voc(egap, spectrum):
     return (k * Tcell) * np.log(photons_above_bandgap(egap, spectrum) / rr0(egap, spectrum))
+
 
 def v_at_mpp(egap, spectrum):
     v_open = voc(egap, spectrum)
@@ -220,6 +226,24 @@ def max_eff_array(spectra_ph_all,index):
 
 
 ###Plots
+    
+def em_ir_ph_plot(E_ph, constants, BB, BB_ph):
+    w,h =plt.figaspect(1.5) 
+    fig, ax = plt.subplots(3,1,figsize = (w,h) )
+    ax[0].plot(E_ph,constants['emissivity'])
+    ax[0].set_xlim(0,4)
+    ax[0].set_ylabel('Emissivity')
+    
+    ax[1].plot(BB[:,0],BB[:,1] )
+    ax[1].set_xlim(0,4)
+    ax[1].set_ylabel('Spectral Irradiance \n ($Wm^{-2}eV^{-1}$)')
+    
+    ax[2].plot(BB_ph[:,0],BB_ph[:,1] )
+    ax[2].set_xlim(0,4)
+    ax[2].set_ylabel('Photon Irradiance\n (# $m^{-2}eV^{-1}$)')
+    plt.xlabel('Photon Energy (eV)')
+    
+    plt.tight_layout()
     
 def photons_above_bandgap_plot(spectrum,E_gaps):
     """Plot of photons above bandgap as a function of bandgap"""
@@ -285,6 +309,7 @@ def ideal_voc_plot(spectrum, E_gaps):
 def iv_curve_plot(egap, spectrum, power=False):
     """Plots the ideal IV curve, and the ideal power for a given material"""
     v_open = voc(egap, spectrum)
+#    v_open = 10
     v = np.linspace(0, v_open)
 
     fig, ax1 = plt.subplots()
