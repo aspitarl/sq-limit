@@ -16,7 +16,13 @@ This is a temporary script file.
 import numpy as np
 import scipy.constants as constants
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
+
+font = {'size' : 14}
+
+matplotlib.rc('font',**font)
+
 
 c = constants.value('speed of light in vacuum')
 h = constants.value('Planck constant in eV s')
@@ -168,7 +174,7 @@ def recomb_rate_v(egap, spectrum, voltage):
 
 def current_density(egap, spectrum, voltage):
     PAG = photons_above_bandgap(egap, spectrum) 
-    return e * (PAG- rr0(egap, spectrum) * (np.exp(voltage / (k * Tcell)) - 1) )
+    return e * (PAG- rr0(egap, spectrum) * (np.exp(voltage / (k * Tcell)) -1) )
 #    j = np.copy(voltage)
 #    for i in range(len(voltage)):
 #        j[i] = e * (photons_above_bandgap(egap, spectrum) - rr_v(egap, spectrum,voltage[i]))
@@ -229,18 +235,20 @@ def max_eff_array(spectra_ph_all,index):
 ###Plots
     
 def em_ir_ph_plot(E_ph, constants, BB, BB_ph):
+    matplotlib.rc('font',**font)
+    
     w,h =plt.figaspect(1.5) 
     fig, ax = plt.subplots(3,1,figsize = (w,h) )
     ax[0].plot(E_ph,constants['emissivity'])
-    ax[0].set_xlim(0,4)
+    ax[0].set_xlim(0,3)
     ax[0].set_ylabel('Emissivity')
     
     ax[1].plot(BB[:,0],BB[:,1] )
-    ax[1].set_xlim(0,4)
+    ax[1].set_xlim(0,3)
     ax[1].set_ylabel('Spectral Irradiance \n ($Wm^{-2}eV^{-1}$)')
     
     ax[2].plot(BB_ph[:,0],BB_ph[:,1] )
-    ax[2].set_xlim(0,4)
+    ax[2].set_xlim(0,3)
     ax[2].set_ylabel('Photon Irradiance\n (# $m^{-2}eV^{-1}$)')
     plt.xlabel('Photon Energy (eV)')
     
