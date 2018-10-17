@@ -45,20 +45,20 @@ d_sun = 1.50e11
 
 ###Plots
     
-def em_ir_ph_plot(E_ph, constants, BB, BB_ph):
+def em_ir_ph_plot(BB, BB_ph, emissivity):
     matplotlib.rc('font',**font)
     
     w,h =plt.figaspect(1.5) 
     fig, ax = plt.subplots(3,1,figsize = (w,h) )
-    ax[0].plot(E_ph,constants['emissivity'])
+    ax[0].plot(emissivity.index,emissivity)
     ax[0].set_xlim(0,3)
     ax[0].set_ylabel('Emissivity')
     
-    ax[1].plot(BB[:,0],BB[:,1] )
+    ax[1].plot(BB.index,BB )
     ax[1].set_xlim(0,3)
     ax[1].set_ylabel('Spectral Irradiance \n ($Wm^{-2}eV^{-1}$)')
     
-    ax[2].plot(BB_ph[:,0],BB_ph[:,1] )
+    ax[2].plot(BB_ph.index,BB_ph )
     ax[2].set_xlim(0,3)
     ax[2].set_ylabel('Photon Irradiance\n (# $m^{-2}eV^{-1}$)')
     plt.xlabel('Photon Energy (eV)')

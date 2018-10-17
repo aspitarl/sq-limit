@@ -43,25 +43,24 @@ d_sun = 1.50e11
 
 
 def stepfn(e_low,high,E_0,E_ph):
-    emissivity = np.copy(E_ph)
+    temp = np.copy(E_ph)
     
-    i=0
-    for E in E_ph:
+    for i in range(len(E_ph)):
+        E = E_ph[i]
         if (E<E_0):
-            emissivity[i] = e_low
+            temp[i] = e_low
         else: 
-            emissivity[i] = high
-        i=i+1    
+            temp[i] = high
     
+    emissivity = pd.Series(temp,index= E_ph)
     return emissivity
 
 def lorentzian(low,high,E_0,width,E_ph):
-    emissivity = np.copy(E_ph)
-    
-    i=0
-    for E in E_ph:
-        emissivity[i] = low + (high-low)/(1 + ((E-E_0)**2/(width**2))  )
-        i=i+1   
+    temp = np.zeros(len(E_ph))
+    for i in range(len(E_ph)):
+        E = E_ph[i]
+        temp[i] = low + (high-low)/(1 + ((E-E_0)**2/(width**2))  )   
+    emissivity = pd.Series(temp,index= E_ph)
     return emissivity
 
 
@@ -73,7 +72,14 @@ def stephan(T):
 def solid_angle_sun (r_e, d_sun):
     return 4*(pi)*((pi*r_e**2)/(4*pi*d_sun**2))
 
-def spect_rad(E_ph,T, emissivity, powfactor = 1):
+
+def gen_spectrum(E_ph,constants):
+    BB = spect_rad(E_ph,constants['Temp'])
+    BB = rad_to_rad(BB,constants['solidangle'] ,constants['emitterarea'], constants['absorberarea'])
+    #BB = BB*constants['emissivity']
+    return BB
+
+def spect_rad(E_ph,T):
     a = (2*(E_ph**3))/(h**3*c**2)
     b = 1/( np.exp((E_ph)/(k*T)) -1 )
     intensity = a*b
@@ -82,45 +88,43 @@ def spect_rad(E_ph,T, emissivity, powfactor = 1):
     intensity = intensity*e 
      # units W/m^2*eV*sr
      
-    intensity = intensity*emissivity
-    spectra = np.transpose(np.stack((E_ph,intensity)))
+    #intensity = intensity*emissivity
+    #spectra = np.transpose(np.stack((E_ph,intensity)))
+    spectra = pd.Series(intensity, index = E_ph)
     return spectra
 
-def rad_to_rad(spectrum, solidangle ,emitterarea, absorberarea):
-    spectra =  spectrum[:,1]
+def rad_to_rad(spectra, solidangle ,emitterarea, absorberarea):
+    #spectra =  spectrum[:,1]
     spectra = spectra*emitterarea   
     # units W/eV*sr
     spectra = spectra*solidangle/4   ### fudge factor of 4 for now. see above.
     # units W/eV
     spectra = spectra/absorberarea  
     # units W/m^2*eV
-    spectrum[:,1] = spectra
-    
-    return spectrum
-
-
-def gen_spectrum(E_ph,constants):
-    BB = spect_rad(E_ph,constants['Temp'],constants['emissivity'])
-    BB = rad_to_rad(BB,constants['solidangle'] ,constants['emitterarea'], constants['absorberarea'])
-    return BB
-
-def gen_spectrum_lor(E_ph,I_bg,I_high,E_0,w):
-    intensity = np.copy(E_ph)  
-    i=0
-    for E in E_ph:
-        intensity[i] = I_bg + (I_high-I_bg)/(1 + ((E-E_0)**2/(w**2))  )
-        i=i+1  
-    
-    spectra = np.transpose(np.stack((E_ph,intensity)))
+    #spectrum[:,1] = spectra
     return spectra
 
 
-# convert to photons from energy
 def power_to_photons(spectrum):
-    converted = np.copy(spectrum)
-    converted[:, 1] = converted[:, 1]/converted[:,0] * 1/e    
+    # convert to photons from energy
+    
+    #converted = np.copy(spectrum)
+    spectrum = spectrum/spectrum.index * 1/e    
     # units #/eV    
-    return converted
+    return spectrum
 
+if __name__ == '__main__':
+    E_ph = np.arange(0.01, 10,0.001) 
+    E_ph = np.flip(E_ph,0)
 
-####Analysis
+    E_gaps = np.arange(0.3, 5,0.01) 
+    E_gaps = np.flip(E_gaps,0)
+
+    constants = {}
+
+    constants['Temp'] = 1800
+    constants['solidangle'] = 2*pi
+    constants['emitterarea'] = 1
+    constants['absorberarea'] = 1
+    
+    constants['emissivity'] = stepfn(1,1,1.1,E_ph)
