@@ -42,25 +42,25 @@ d_sun = 1.50e11
 
 
 
-def gen_emissivity(e_low,e_high,E_cutoff,E_ph):
+def stepfn(e_low,high,E_0,E_ph):
     emissivity = np.copy(E_ph)
     
     i=0
     for E in E_ph:
-        if (E<E_cutoff):
+        if (E<E_0):
             emissivity[i] = e_low
         else: 
-            emissivity[i] = e_high
+            emissivity[i] = high
         i=i+1    
     
     return emissivity
 
-def lor_emissivity(e_bg,e_high,E_cutoff,w,E_ph):
+def lorentzian(low,high,E_0,width,E_ph):
     emissivity = np.copy(E_ph)
     
     i=0
     for E in E_ph:
-        emissivity[i] = e_bg + (e_high-e_bg)/(1 + ((E-E_cutoff)**2/(w**2))  )
+        emissivity[i] = low + (high-low)/(1 + ((E-E_0)**2/(width**2))  )
         i=i+1   
     return emissivity
 
@@ -104,11 +104,11 @@ def gen_spectrum(E_ph,constants):
     BB = rad_to_rad(BB,constants['solidangle'] ,constants['emitterarea'], constants['absorberarea'])
     return BB
 
-def gen_spectrum_lor(E_ph,I_bg,I_high,E_cutoff,w):
+def gen_spectrum_lor(E_ph,I_bg,I_high,E_0,w):
     intensity = np.copy(E_ph)  
     i=0
     for E in E_ph:
-        intensity[i] = I_bg + (I_high-I_bg)/(1 + ((E-E_cutoff)**2/(w**2))  )
+        intensity[i] = I_bg + (I_high-I_bg)/(1 + ((E-E_0)**2/(w**2))  )
         i=i+1  
     
     spectra = np.transpose(np.stack((E_ph,intensity)))
