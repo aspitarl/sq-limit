@@ -40,7 +40,71 @@ r_earth = 6e6
 r_sun = 6.95e8
 d_sun = 1.50e11
 
+###Todo understand better irradiance vs radiance, may be causing fudge factor of 4
+def rad_blackbody(E_ph,constants): #Todo: switch to kwargs
+    """High level function to generate a blackbody spectral radiance depending on temperature and geometrical constants"""
+    BB = spect_irrad(E_ph,constants['Temp'])
+    BB = irrad_to_rad(BB,constants['solidangle'] ,constants['emitterarea'], constants['absorberarea'])
+    return BB
 
+def spect_irrad(E_ph,T):
+    """
+    Generate spectral irradance for temperature T
+    
+    # units W/m^2*eV*sr
+    """
+    a = (2*(E_ph**3))/(h**3*c**2)
+    b = 1/( np.exp((E_ph)/(k*T)) -1 )
+    intensity = a*b
+    # units (eV/s)/m^2*eV*sr
+    
+    intensity = intensity*e 
+     
+    spectra = pd.Series(intensity, index = E_ph)
+    return spectra
+
+def irrad_to_rad(spectra, solidangle ,emitterarea, absorberarea):
+    """
+    Convert spectral irradiance to spectral radiance.
+    
+    Calculate total energy emitting from body of area emitterarea over angle solidangle, then cast that energy on an absorber of area absorberarea. 
+    # units W/m^2*eV
+     """
+    spectra = spectra*emitterarea   
+    # units W/eV*sr
+    spectra = spectra*solidangle/4   ### fudge factor of 4 for now. see above/notebook.
+    # units W/eV
+    spectra = spectra/absorberarea  
+    
+    return spectra
+
+
+def power_to_photons(spectrum):
+    """
+    convert to photons from energy
+    
+    # units #/eV    
+    """
+    spectrum = spectrum/spectrum.index * 1/e    
+    
+    return spectrum
+
+def solid_angle_sun (r_e, d_sun):
+    """Calculate the solid angle of earth with respect to sun"""
+    return 4*(pi)*((pi*r_e**2)/(4*pi*d_sun**2))
+
+def stephan(T):
+    """
+    Return the intensity from the stephan boltzman equation 
+    
+    #units W/m^2
+    """
+    result = (5.670367e-8)*(T**4)
+    
+    return result
+
+
+###basic math Function generation, used to make emissivity and filter arrays
 
 def stepfn(e_low,high,E_0,E_ph):
     temp = np.copy(E_ph)
@@ -64,54 +128,6 @@ def lorentzian(low,high,E_0,width,E_ph):
     return emissivity
 
 
-def stephan(T):
-    result = (5.670367e-8)*(T**4)
-    #units W/m^2
-    return result
-
-def solid_angle_sun (r_e, d_sun):
-    return 4*(pi)*((pi*r_e**2)/(4*pi*d_sun**2))
-
-
-def gen_spectrum(E_ph,constants):
-    BB = spect_rad(E_ph,constants['Temp'])
-    BB = rad_to_rad(BB,constants['solidangle'] ,constants['emitterarea'], constants['absorberarea'])
-    #BB = BB*constants['emissivity']
-    return BB
-
-def spect_rad(E_ph,T):
-    a = (2*(E_ph**3))/(h**3*c**2)
-    b = 1/( np.exp((E_ph)/(k*T)) -1 )
-    intensity = a*b
-    # units (eV/s)/m^2*eV*sr
-    
-    intensity = intensity*e 
-     # units W/m^2*eV*sr
-     
-    #intensity = intensity*emissivity
-    #spectra = np.transpose(np.stack((E_ph,intensity)))
-    spectra = pd.Series(intensity, index = E_ph)
-    return spectra
-
-def rad_to_rad(spectra, solidangle ,emitterarea, absorberarea):
-    #spectra =  spectrum[:,1]
-    spectra = spectra*emitterarea   
-    # units W/eV*sr
-    spectra = spectra*solidangle/4   ### fudge factor of 4 for now. see above.
-    # units W/eV
-    spectra = spectra/absorberarea  
-    # units W/m^2*eV
-    #spectrum[:,1] = spectra
-    return spectra
-
-
-def power_to_photons(spectrum):
-    # convert to photons from energy
-    
-    #converted = np.copy(spectrum)
-    spectrum = spectrum/spectrum.index * 1/e    
-    # units #/eV    
-    return spectrum
 
 if __name__ == '__main__':
     E_ph = np.arange(0.01, 10,0.001) 
