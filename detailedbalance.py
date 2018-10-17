@@ -40,59 +40,50 @@ r_earth = 6e6
 r_sun = 6.95e8
 d_sun = 1.50e11
 
-
-
-
-
-####Analysis
-
-
-    
-# convert to photons from energy
-
-
 def photons_above_bandgap(egap, spectrum):
     """Counts number of photons above given bandgap"""
-    indexes = np.where(spectrum[:, 0] > egap)
-    y = spectrum[indexes, 1][0]
-    x = spectrum[indexes, 0][0]
+    indexes = np.where(spectrum.index > egap)
+    y = spectrum.iloc[indexes]
+    x = y.index
     return np.trapz(y[::-1], x[::-1])
     
-def rr0(egap, spectrum):
-
-    const = (2 * np.pi) / (c**2 * h**3)
-
-    E = spectrum[::-1, ]  # in increasing order of bandgap energy
-    egap_index = np.where(E[:, 0] >= egap)
-    numerator = E[:, 0]**2
-    exponential_in = E[:, 0] / (k * Tcell)
-    denominator = np.exp(exponential_in) - 1
-    integrand = numerator / denominator
-
-    integral = np.trapz(integrand[egap_index], E[egap_index, 0])
-
-    result = const * integral
-    return result[0]
-
 def recomb_rate(egap, spectrum, voltage):
     print( 'recomb rate')
-    return e * rr0(egap, spectrum) * np.exp(voltage / (k * Tcell))
+    return e * rr_v(egap, spectrum, 0) * np.exp(voltage / (k * Tcell))
 
 def rr_v(egap, spectrum, voltage):
 
     const = (2 * np.pi) / (c**2 * h**3)
 
-    E = spectrum[::-1, ]  # in increasing order of bandgap energy
-    egap_index = np.where(E[:, 0] >= egap)
-    numerator = E[:, 0]**2
-    exponential_in = (E[:, 0] - voltage) / (k * Tcell)
+    E = spectrum.index[::-1, ]  # in increasing order of bandgap energy
+    egap_index = np.where(spectrum.index>= egap)
+    numerator = E**2
+    exponential_in = (E - voltage) / (k * Tcell)
     denominator = np.exp(exponential_in) - 1
     integrand = numerator / denominator
 
-    integral = np.trapz(integrand[egap_index], E[egap_index, 0])
+    integral = np.trapz(integrand[egap_index], E[egap_index])
 
     result = const * integral
-    return result[0]
+    return result
+
+
+#Was here before, errors when trying to remove
+def rr0(egap, spectrum):
+
+    const = (2 * np.pi) / (c**2 * h**3)
+
+    E = spectrum.index[::-1, ]  # in increasing order of bandgap energy
+    egap_index = np.where(spectrum.index>= egap)
+    numerator = E**2
+    exponential_in = E / (k * Tcell)
+    denominator = np.exp(exponential_in) - 1
+    integrand = numerator / denominator
+
+    integral = np.trapz(integrand[egap_index], E[egap_index])
+
+    result = const * integral
+    return result
 
 def recomb_rate_v(egap, spectrum, voltage):
     print( 'recomb rate with correct voltage ')
@@ -100,18 +91,14 @@ def recomb_rate_v(egap, spectrum, voltage):
 
 def current_density(egap, spectrum, voltage):
     PAG = photons_above_bandgap(egap, spectrum) 
-    return e * (PAG- rr0(egap, spectrum) * (np.exp(voltage / (k * Tcell)) -1) )
-#    j = np.copy(voltage)
-#    for i in range(len(voltage)):
-#        j[i] = e * (photons_above_bandgap(egap, spectrum) - rr_v(egap, spectrum,voltage[i]))
-#    return j
+    return e * (PAG- rr_v(egap, spectrum,0) * (np.exp(voltage / (k * Tcell)) -1) )
     
     
 def jsc(egap, spectrum):
     return current_density(egap, spectrum, 0)
 
 def voc(egap, spectrum):
-    return (k * Tcell) * np.log((photons_above_bandgap(egap, spectrum) / rr0(egap, spectrum)) +1)
+    return (k * Tcell) * np.log((photons_above_bandgap(egap, spectrum) / rr_v(egap, spectrum,0)) +1)
 
 
 def v_at_mpp(egap, spectrum):
@@ -131,7 +118,7 @@ def max_power(egap, spectrum):
     return max(v * current_density(egap, spectrum, v))
 
 def int_irr(egap, spectrum):
-    irradiance =  np.trapz(spectrum[::-1, 1] * e * spectrum[::-1, 0], spectrum[::-1, 0])
+    irradiance =  np.trapz(spectrum.iloc[::-1] * e * spectrum.index[::-1], spectrum.index[::-1])
     return irradiance
 
 def max_eff(egap, spectrum):
