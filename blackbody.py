@@ -31,14 +31,6 @@ k = constants.value('Boltzmann constant in eV/K')
 
 pi = 3.1415
 
-# Globals
-Tcell = 300  # Kelvin
-# Energy Gap
-Egap = 1.1  #electron volts
-
-r_earth = 6e6
-r_sun = 6.95e8
-d_sun = 1.50e11
 
 ###Todo understand better irradiance vs radiance, may be causing fudge factor of 4
 def rad_blackbody(E_ph,constants): #Todo: switch to kwargs
@@ -89,9 +81,13 @@ def power_to_photons(spectrum):
     
     return spectrum
 
-def solid_angle_sun (r_e, d_sun):
-    """Calculate the solid angle of earth with respect to sun"""
-    return 4*(pi)*((pi*r_e**2)/(4*pi*d_sun**2))
+def solid_angle (r_surf, dist):
+    """
+    Calculate the solid angle of a circular surface wrt a apoint
+    
+    Assumes that the emitter and object are far enough away that the surface of the object can be approximated as a circle. Originally used for the earth with respect to the sun.
+    """
+    return 4*(pi)*((pi*r_surf**2)/(4*pi*dist**2))
 
 def stephan(T):
     """
