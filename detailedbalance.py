@@ -41,7 +41,12 @@ r_sun = 6.95e8
 d_sun = 1.50e11
 
 def photons_above_bandgap(egap, spectrum):
-    """Counts number of photons above given bandgap"""
+    """
+    Counts number of photons above given bandgap
+    
+    input: #/m^2*s*eV
+    output: #/m^2*s
+    """
     indexes = np.where(spectrum.index > egap)
     y = spectrum.iloc[indexes]
     x = y.index

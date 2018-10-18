@@ -81,9 +81,9 @@ def irrad_to_rad(spectra, solidangle ,emitterarea, absorberarea):
 
 def power_to_photons(spectrum):
     """
-    convert to photons from energy
+    convert to photons from power   
     
-    # units #/eV    
+    # units #/m^2*s*eV    
     """
     spectrum = spectrum/spectrum.index * 1/e    
     
