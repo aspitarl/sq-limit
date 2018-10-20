@@ -13,22 +13,26 @@ import numpy as np
 def read_filter(filepath,refspect):
     """loads in filter data and interpolates data points to match reference speectrum"""
     filt = pd.read_csv(filepath, usecols = [0,1], index_col = 0)
-    filt_data = filt['% Transmission']
-    ev = 1240/filt.index
-    filt_interp = np.interp(refspect.index,ev,filt_data)
-    ev_interp = np.interp(refspect.index,ev,ev)
-    filt = pd.Series(filt_interp, index = ev_interp)
-    return filt
+    return reshape_spect(filt['% Transmission'],refspect)
 
 #Load QE data
 
 def read_QE(filepath,refspect):
-    QEcsv = pd.read_csv(filepath, names = ['QE', 'Wavelength'])
-    ev = 1240/QEcsv['Wavelength']
-    ev = np.flip(ev,0)
-    QE = QEcsv['QE']
-    QE = np.flip(QE,0)
-    QE_interp = np.interp(refspect.index,ev,QE)
+    QEcsv = pd.read_csv(filepath, names = ['QE', 'Wavelength'], index_col=1)
+    return reshape_spect(QEcsv['QE'],refspect)
+
+
+def reshape_spect(spectrum, refspect):
+    """converts a spectral array to be in eV and interpolates the data to match refspect"""
+    #flip and switch to eV
+    wavelength = spectrum.index
+    ev = 1240/wavelength
+    if (ev[0] > ev[-1]):
+        ev = np.flip(ev,0)
+        spectrum = np.flip(spectrum, 0)
+    #interpolate
+    spect_interp = np.interp(refspect.index,ev,spectrum)
     ev_interp = np.interp(refspect.index,ev,ev)
-    QE = pd.Series(QE_interp, index = ev_interp)
-    return QE
+    spect = pd.Series(spect_interp, index = ev_interp)
+    return spect
+
